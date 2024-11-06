@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Wsc2020Day2Session1CompetitorApp" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
