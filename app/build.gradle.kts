@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.wsc2020day2session1competitorapp"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.wsc2020day2session1competitorapp"
@@ -58,5 +58,10 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation ("androidx.navigation:navigation-compose:2.5.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
+    implementation("com.google.zxing:core:3.4.1")
+
+
 }

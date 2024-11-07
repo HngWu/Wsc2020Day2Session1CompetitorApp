@@ -3,6 +3,9 @@ package com.example.wsc2020day2session1competitorapp.api
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import com.example.wsc2020day2session1competitorapp.models.SessionManager
+import com.example.wsc2020day2session1competitorapp.models.User
+import com.example.wsc2020day2session1competitorapp.models.UserSession
 import kotlinx.serialization.encodeToString
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
