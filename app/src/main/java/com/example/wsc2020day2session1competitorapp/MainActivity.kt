@@ -3,6 +3,7 @@ package com.example.wsc2020day2session1competitorapp
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -52,6 +53,8 @@ import androidx.navigation.NavHost
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.wsc2020day2session1competitorapp.api.authUser
+import com.example.wsc2020day2session1competitorapp.api.checkForCheckIn
 import com.example.wsc2020day2session1competitorapp.api.getAnnouncement
 import com.example.wsc2020day2session1competitorapp.api.getCompetitor
 import com.example.wsc2020day2session1competitorapp.api.login
@@ -61,6 +64,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 
 class MainActivity : ComponentActivity() {
@@ -108,11 +112,65 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+
 @Composable
 fun HomeScreen(navController: NavController, context: Context) {
     var selectedTabIndex by remember { mutableStateOf(0) } // Default to "Announcements" tab
     val tabs = listOf("AnnouncementsScreen", "ProfileScreen")
     val sessionManager = SessionManager(context)
+    var alert by remember { mutableStateOf(false) }
+    var validUser by remember { mutableStateOf(false) }
+
+
+    LaunchedEffect(Unit) {
+        val authUser = authUser()
+        authUser.postFunction(context,
+            onSuccess = {
+                validUser = true
+            },
+            onFailure = {
+                Toast.makeText(
+                    context,
+                    "Authentication Failed, Please Login Again",
+                    Toast.LENGTH_SHORT
+                ).show()
+                navController.navigate("login")
+            })
+
+        while (validUser)
+        {
+            val checkForCheckIn = checkForCheckIn()
+            val isCheckedIn = checkForCheckIn.getFunction(sessionManager.getSession()!!.userId)
+
+            if (isCheckedIn != null) {
+                if (isCheckedIn) {
+                    alert = true
+                    break
+                }
+            }
+        }
+    }
+
+    if(alert)
+    {
+        AlertDialog(
+            onDismissRequest = { alert = false },
+            title = { Text("Check In Completed") },
+            text = { Text("You Have Checked In") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        alert = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.SpaceBetween,
@@ -163,6 +221,8 @@ fun HomeScreen(navController: NavController, context: Context) {
 @Composable
 fun AnnouncementsScreen(navController: NavController, context: Context)  {
     var announcements by remember { mutableStateOf<List<Announcement>>(emptyList()) }
+    var validUser by remember { mutableStateOf(false) }
+
 
     LaunchedEffect(Unit) {
         while(true)
@@ -230,14 +290,35 @@ fun ProfileScreen(navController: NavController, context: Context) {
     val qrCodeBitmap = generateQRCode(competitorId)
 
     val session = SessionManager(context).getSession()
+    var validUser by remember { mutableStateOf(false) }
+
 
     LaunchedEffect(Unit) {
          competitorId = session!!.userId
         CoroutineScope(Dispatchers.IO).launch {
-            val competitor = getCompetitor().getFunction(competitorId)
-            if (competitor != null) {
-                fullName.value = "${competitor.fullName}"
+
+            val authUser = authUser()
+            authUser.postFunction(context,
+                onSuccess = {
+                    validUser = true
+                },
+                onFailure = {
+                    Toast.makeText(
+                        context,
+                        "Authentication Failed, Please Login Again",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    navController.navigate("login")
+                })
+
+            if(validUser)
+            {
+                val competitor = getCompetitor().getFunction(competitorId)
+                if (competitor != null) {
+                    fullName.value = "${competitor.fullName}"
+                }
             }
+
         }
 
     }
@@ -256,10 +337,10 @@ fun ProfileScreen(navController: NavController, context: Context) {
             Image(bitmap = it.asImageBitmap(), contentDescription = "QR Code")
         }
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = competitorId, style = MaterialTheme.typography.bodyMedium)
+        Text(text = "Competitor ID: $competitorId", style = MaterialTheme.typography.bodyMedium)
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = fullName.value, style = MaterialTheme.typography.bodyMedium)
+        Text(text = "Full Name: $fullName.value", style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -283,6 +364,9 @@ fun generateQRCode(text: String): Bitmap? {
 fun LoginScreen(navController: NavController, context: Context) {
 
     var alert by remember { mutableStateOf(false) }
+    var login by remember { mutableStateOf(false) }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
     if (alert) {
         AlertDialog(
@@ -303,8 +387,26 @@ fun LoginScreen(navController: NavController, context: Context) {
     }
 
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    if (login) {
+        LaunchedEffect(Unit) {
+            CoroutineScope(Dispatchers.IO).launch {
+                val user = User(email, password)
+                val loginService = login()
+                loginService.postFunction(user, context,
+                    onSuccess = {
+                        navController.navigate("home")
+                    },
+                    onFailure = {
+                        alert = true
+                        email   = ""
+                        password = ""
+                    })
+
+            }
+        }
+    }
+
+
 
     Column(
         modifier = Modifier
@@ -332,20 +434,7 @@ fun LoginScreen(navController: NavController, context: Context) {
         Button(
             modifier = Modifier.width(280.dp),
             onClick = {
-                CoroutineScope(Dispatchers.IO).launch {
-                    val user = User(email, password)
-                    val loginService = login()
-                    loginService.postFunction(user, context,
-                        onSuccess = {
-                            navController.navigate("home")
-                        },
-                        onFailure = {
-                            alert = true
-                            email   = ""
-                            password = ""
-                        })
-
-                }
+                login = true;
             }
         ) {
             Text(text = "Login")

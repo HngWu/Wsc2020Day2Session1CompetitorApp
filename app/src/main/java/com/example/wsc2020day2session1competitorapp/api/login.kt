@@ -57,7 +57,7 @@ class login {
                     throw Exception("Invalid session")
                 }
 
-                if (session.role == "admin") {
+                if (session.role == "competitor") {
                     val sessionManager = SessionManager(context)
                     sessionManager.saveSession(session)
                     Handler(Looper.getMainLooper()).post() {
