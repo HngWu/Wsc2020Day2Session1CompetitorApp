@@ -53,11 +53,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.wsc2020day2session1competitorapp.api.getAnnouncement
+import com.example.wsc2020day2session1competitorapp.api.getCompetitor
 import com.example.wsc2020day2session1competitorapp.api.login
 import com.example.wsc2020day2session1competitorapp.models.Announcement
 import com.example.wsc2020day2session1competitorapp.models.User
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 
 
 class MainActivity : ComponentActivity() {
@@ -162,14 +165,19 @@ fun AnnouncementsScreen(navController: NavController, context: Context)  {
     var announcements by remember { mutableStateOf<List<Announcement>>(emptyList()) }
 
     LaunchedEffect(Unit) {
-        val getAnnouncement = getAnnouncement()
+        while(true)
+        {
+            val getAnnouncement = getAnnouncement()
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val announcementList = getAnnouncement.getFunction()
-            if (announcementList != null) {
-                announcements = announcementList.sortedByDescending { it.announcementDate }
+            CoroutineScope(Dispatchers.IO).launch {
+                val announcementList = getAnnouncement.getFunction()
+                if (announcementList != null) {
+                    announcements = announcementList.sortedByDescending { it.announcementDate }
+                }
             }
+            delay(1000)
         }
+
     }
 
     Column(
@@ -225,6 +233,12 @@ fun ProfileScreen(navController: NavController, context: Context) {
 
     LaunchedEffect(Unit) {
          competitorId = session!!.userId
+        CoroutineScope(Dispatchers.IO).launch {
+            val competitor = getCompetitor().getFunction(competitorId)
+            if (competitor != null) {
+                fullName.value = "${competitor.fullName}"
+            }
+        }
 
     }
 
@@ -232,7 +246,6 @@ fun ProfileScreen(navController: NavController, context: Context) {
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -244,6 +257,9 @@ fun ProfileScreen(navController: NavController, context: Context) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = competitorId, style = MaterialTheme.typography.bodyMedium)
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(text = fullName.value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
