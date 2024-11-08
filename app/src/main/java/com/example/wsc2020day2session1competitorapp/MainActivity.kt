@@ -111,6 +111,10 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+    override fun onStop() {
+        super.onStop()
+        sessionManager.clearSession()
+    }
 }
 
 
@@ -434,7 +438,20 @@ fun LoginScreen(navController: NavController, context: Context) {
         Button(
             modifier = Modifier.width(280.dp),
             onClick = {
-                login = true;
+                CoroutineScope(Dispatchers.IO).launch {
+                    val user = User(email, password)
+                    val loginService = login()
+                    loginService.postFunction(user, context,
+                        onSuccess = {
+                            navController.navigate("home")
+                        },
+                        onFailure = {
+                            alert = true
+                            email   = ""
+                            password = ""
+                        })
+
+                }
             }
         ) {
             Text(text = "Login")
