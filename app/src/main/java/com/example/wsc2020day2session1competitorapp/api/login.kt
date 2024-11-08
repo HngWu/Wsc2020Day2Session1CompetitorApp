@@ -18,7 +18,7 @@ class login {
         user: User,
         context: Context,
         onSuccess: (Boolean) -> Unit,
-        onFailure: (Boolean) -> Unit
+        onFailure: (Throwable) -> Unit
     ) {
         val url = URL("http://10.0.2.2:5006/api/Hospitality/login")
 
@@ -38,6 +38,8 @@ class login {
 
             val status = con.responseCode
             if (status == 200) {
+
+
                 val response = con.inputStream.bufferedReader().use { it.readText() }
                 val jsonResponse = JSONObject(response)
 
@@ -55,31 +57,25 @@ class login {
                     throw Exception("Invalid session")
                 }
 
-                if (session.role != "competitor") {
-                    Handler(Looper.getMainLooper()).post() {
-                        onFailure(true)
-                    }
-                    //onSuccess(true)
-
-//                    Handler(Looper.getMainLooper()).post() {
-//                        onSuccess(true)
-//                    }
-
-
-                } else {
+                if (session.role == "competitor") {
                     val sessionManager = SessionManager(context)
                     sessionManager.saveSession(session)
-
                     Handler(Looper.getMainLooper()).post() {
                         onSuccess(true)
                     }
-
+                }else{
+                    Handler(Looper.getMainLooper()).post() {
+                        onFailure(Throwable("Post asset failed"))
+                    }
                 }
 
+            } else {
+                Handler(Looper.getMainLooper()).post {
+                    onFailure(Throwable("Post asset failed"))
+                }
             }
-
         } catch (e: Exception) {
-            onFailure(true)
+            onFailure(e)
         }
     }
 

@@ -368,9 +368,6 @@ fun generateQRCode(text: String): Bitmap? {
 fun LoginScreen(navController: NavController, context: Context) {
 
     var alert by remember { mutableStateOf(false) }
-    var login by remember { mutableStateOf(false) }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
 
     if (alert) {
         AlertDialog(
@@ -391,26 +388,8 @@ fun LoginScreen(navController: NavController, context: Context) {
     }
 
 
-    if (login) {
-        LaunchedEffect(Unit) {
-            CoroutineScope(Dispatchers.IO).launch {
-                val user = User(email, password)
-                val loginService = login()
-                loginService.postFunction(user, context,
-                    onSuccess = {
-                        navController.navigate("home")
-                    },
-                    onFailure = {
-                        alert = true
-                        email   = ""
-                        password = ""
-                    })
-
-            }
-        }
-    }
-
-
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -447,8 +426,6 @@ fun LoginScreen(navController: NavController, context: Context) {
                         },
                         onFailure = {
                             alert = true
-                            email   = ""
-                            password = ""
                         })
 
                 }
