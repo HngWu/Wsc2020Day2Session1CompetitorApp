@@ -3,6 +3,7 @@ package com.example.wsc2020day2session1competitorapp.api
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import com.example.wsc2020day2session1competitorapp.models.SessionManager
 import com.example.wsc2020day2session1competitorapp.models.User
 import com.example.wsc2020day2session1competitorapp.models.UserSession
@@ -17,11 +18,9 @@ class login {
     fun postFunction(
         user: User,
         context: Context,
-        onSuccess: (Boolean) -> Unit,
-        onFailure: (Throwable) -> Unit
-    ) {
+    ) : Boolean{
         val url = URL("http://10.0.2.2:5006/api/Hospitality/login")
-
+        var isSuccessCalled = false
         try {
             val con = url.openConnection() as HttpURLConnection
             con.requestMethod = "POST"
@@ -60,22 +59,16 @@ class login {
                 if (session.role == "competitor") {
                     val sessionManager = SessionManager(context)
                     sessionManager.saveSession(session)
-                    Handler(Looper.getMainLooper()).post() {
-                        onSuccess(true)
-                    }
-                }else{
-                    Handler(Looper.getMainLooper()).post() {
-                        onFailure(Throwable("Post asset failed"))
-                    }
+                    return true
+                } else {
+                    return false
                 }
-
             } else {
-                Handler(Looper.getMainLooper()).post {
-                    onFailure(Throwable("Post asset failed"))
-                }
+                return false
+
             }
         } catch (e: Exception) {
-            onFailure(e)
+            return false
         }
     }
 

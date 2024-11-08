@@ -387,9 +387,16 @@ fun LoginScreen(navController: NavController, context: Context) {
         )
     }
 
-
+    var loginSuccess by remember { mutableStateOf(false) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    if (loginSuccess) {
+        LaunchedEffect(Unit) {
+            navController.navigate("home")
+            //loginSuccess = false
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -420,14 +427,18 @@ fun LoginScreen(navController: NavController, context: Context) {
                 CoroutineScope(Dispatchers.IO).launch {
                     val user = User(email, password)
                     val loginService = login()
-                    loginService.postFunction(user, context,
-                        onSuccess = {
-                            navController.navigate("home")
-                        },
-                        onFailure = {
-                            alert = true
-                        })
+                    val isUser = loginService.postFunction(user, context)
 
+
+                    if (isUser) {
+                        withContext(Dispatchers.Main) {
+                            navController.navigate("home")
+                        }                        //loginSuccess = true
+                    } else {
+                        alert = true
+                        email   = ""
+                        password = ""
+                    }
                 }
             }
         ) {
