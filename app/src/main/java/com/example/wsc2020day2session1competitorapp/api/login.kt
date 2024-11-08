@@ -18,7 +18,9 @@ class login {
     fun postFunction(
         user: User,
         context: Context,
-    ) : Boolean{
+        onSuccess: (Boolean) -> Unit,
+        onFailure: (Boolean) -> Unit
+    ) {
         val url = URL("http://10.0.2.2:5006/api/Hospitality/login")
         var isSuccessCalled = false
         try {
@@ -59,16 +61,22 @@ class login {
                 if (session.role == "competitor") {
                     val sessionManager = SessionManager(context)
                     sessionManager.saveSession(session)
-                    return true
+                    Handler(Looper.getMainLooper()).post {
+                        onSuccess(true)
+                    }
                 } else {
-                    return false
+                    Handler(Looper.getMainLooper()).post {
+                        onFailure(true)
+                    }
                 }
             } else {
-                return false
+                Handler(Looper.getMainLooper()).post() {
+                    onFailure(true)
+                }
 
             }
         } catch (e: Exception) {
-            return false
+            onFailure(true)
         }
     }
 

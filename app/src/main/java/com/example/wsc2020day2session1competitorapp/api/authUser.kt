@@ -17,7 +17,7 @@ class authUser {
         onSuccess: (Boolean) -> Unit,
         onFailure: (Boolean) -> Unit
     ) {
-        val url = URL("http://10.0.2.2:5006/api/Hospitality/AuthUser")
+        val url = URL("http://10.0.2.2:5006/api/Hospitality/AuthCompetitor")
 
         try {
             val con = url.openConnection() as HttpURLConnection

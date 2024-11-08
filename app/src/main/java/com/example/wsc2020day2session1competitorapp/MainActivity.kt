@@ -97,6 +97,7 @@ class MainActivity : ComponentActivity() {
                                 context = this@MainActivity,
                             )
                         }
+
                         composable("home") {
                             HomeScreen(
                                 navController = navController,
@@ -118,6 +119,93 @@ class MainActivity : ComponentActivity() {
 }
 
 
+
+
+@Composable
+fun LoginScreen(navController: NavController, context: Context) {
+
+    var alert by remember { mutableStateOf(false) }
+
+    if (alert) {
+        AlertDialog(
+            onDismissRequest = { alert = false },
+            title = { Text("Invalid") },
+            text = { Text("Invalid Login Details") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        alert = false
+
+                    }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    var loginSuccess by remember { mutableStateOf(false) }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    if (loginSuccess) {
+        LaunchedEffect(Unit) {
+            navController.navigate("home")
+            //loginSuccess = false
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    )
+    {
+        Text(text = "Login", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            modifier = Modifier.width(280.dp),
+            onClick = {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val user = User(email, password)
+                    val login = login()
+                    login.postFunction(
+                        user = user,
+                        context = context,
+                        onSuccess = {
+                            loginSuccess = true
+                        },
+                        onFailure = {
+                            alert = true
+                            email = ""
+                            password = ""
+                        }
+                    )
+                }
+            }
+        ) {
+            Text(text = "Login")
+        }
+    }
+
+
+}
+
 @Composable
 fun HomeScreen(navController: NavController, context: Context) {
     var selectedTabIndex by remember { mutableStateOf(0) } // Default to "Announcements" tab
@@ -129,30 +217,36 @@ fun HomeScreen(navController: NavController, context: Context) {
 
     LaunchedEffect(Unit) {
         val authUser = authUser()
-        authUser.postFunction(context,
-            onSuccess = {
-                validUser = true
-            },
-            onFailure = {
-                Toast.makeText(
-                    context,
-                    "Authentication Failed, Please Login Again",
-                    Toast.LENGTH_SHORT
-                ).show()
-                navController.navigate("login")
-            })
+        CoroutineScope(Dispatchers.IO).launch {
+            authUser.postFunction(context,
+                onSuccess = {
+                    validUser = true
+                },
+                onFailure = {
+                    Toast.makeText(
+                        context,
+                        "Authentication Failed, Please Login Again",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    navController.navigate("login")
+                })
+        }
+
 
         while (validUser)
         {
             val checkForCheckIn = checkForCheckIn()
-            val isCheckedIn = checkForCheckIn.getFunction(sessionManager.getSession()!!.userId)
+            CoroutineScope(Dispatchers.IO).launch {
+                val isCheckedIn = checkForCheckIn.getFunction(sessionManager.getSession()!!.userId)
 
-            if (isCheckedIn != null) {
-                if (isCheckedIn) {
-                    alert = true
-                    break
+                if (isCheckedIn != null) {
+                    if (isCheckedIn) {
+                        alert = true
+
+                    }
                 }
             }
+            delay(1000)
         }
     }
 
@@ -315,14 +409,12 @@ fun ProfileScreen(navController: NavController, context: Context) {
                     navController.navigate("login")
                 })
 
-            if(validUser)
-            {
-                val competitor = getCompetitor().getFunction(competitorId)
-                if (competitor != null) {
-                    fullName.value = "${competitor.fullName}"
-                }
+        }
+        CoroutineScope(Dispatchers.IO).launch {
+            val competitor = getCompetitor().getFunction(competitorId)
+            if (competitor != null) {
+                fullName.value = competitor.fullName
             }
-
         }
 
     }
@@ -343,8 +435,7 @@ fun ProfileScreen(navController: NavController, context: Context) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = "Competitor ID: $competitorId", style = MaterialTheme.typography.bodyMedium)
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Full Name: $fullName.value", style = MaterialTheme.typography.bodyMedium)
+
     }
 }
 
@@ -364,90 +455,7 @@ fun generateQRCode(text: String): Bitmap? {
     }
 }
 
-@Composable
-fun LoginScreen(navController: NavController, context: Context) {
 
-    var alert by remember { mutableStateOf(false) }
-
-    if (alert) {
-        AlertDialog(
-            onDismissRequest = { alert = false },
-            title = { Text("Invalid") },
-            text = { Text("Invalid Login Details") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        alert = false
-
-                    }
-                ) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-
-    var loginSuccess by remember { mutableStateOf(false) }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    if (loginSuccess) {
-        LaunchedEffect(Unit) {
-            navController.navigate("home")
-            //loginSuccess = false
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    )
-    {
-        Text(text = "Login", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") }
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation()
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            modifier = Modifier.width(280.dp),
-            onClick = {
-                CoroutineScope(Dispatchers.IO).launch {
-                    val user = User(email, password)
-                    val loginService = login()
-                    val isUser = loginService.postFunction(user, context)
-
-
-                    if (isUser) {
-                        withContext(Dispatchers.Main) {
-                            navController.navigate("home")
-                        }                        //loginSuccess = true
-                    } else {
-                        alert = true
-                        email   = ""
-                        password = ""
-                    }
-                }
-            }
-        ) {
-            Text(text = "Login")
-        }
-    }
-
-
-}
 
 
 
